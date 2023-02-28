@@ -125,7 +125,7 @@ with open("individual_posts.html", "w", encoding="utf-8") as file:
 
 
 driver.quit()
-'''
+
 save_dir = "9gag_images"
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
@@ -138,4 +138,3 @@ for img_source in image_sources:
     with open(save_path, 'wb') as f:
         f.write(response.content)
     i += 1
-'''
