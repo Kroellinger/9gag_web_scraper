@@ -83,9 +83,8 @@ def getInfoArticle(article):
 def collectArticleIds(driver):
     SCROLL_PAUSE_TIME = 0.5
     i = 0
-    while (i < 3):
+    while (i < 20):
         i += 1
-        print(i)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(SCROLL_PAUSE_TIME)
         source = driver.page_source
@@ -120,12 +119,12 @@ def saveCsv():
 
 
     # create a list of tuples where each tuple represents a row
-    rows = zip(image_ids, images_creation, image_sources, image_tags, image_upvotes, image_downvotes)
+    rows = zip(image_ids, images_creation, image_sources, image_titels, image_tags, image_upvotes, image_downvotes)
 
     # write the rows to a CSV file
     with open("C:/Users/ASUS/OneDrive/Desktop/articleInfo/image_data.csv", "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["image_id", "image_creation", "image_source", "image_tags", "image_upvotes", "image_downvotes"])
+        writer.writerow(["image_id", "image_creation", "image_source", "image_titels", "image_tags", "image_upvotes", "image_downvotes"])
         for row in rows:
             writer.writerow(row)
 
