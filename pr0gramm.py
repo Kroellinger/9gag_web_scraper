@@ -9,10 +9,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 import time
 import requests
 import csv
-#1450
 
 image_ids = []
-image_titels = []
 images_creation = []
 image_sources = []
 image_tags = []
@@ -21,13 +19,11 @@ image_downvotes = []
 image_authors = []
 counter = 1
 
-
-banned_authors = []
-
 PATH = "C:\Program Files\chromedriver.exe"
-url = 'https://9gag.com/tag/germany'
+url = 'https://pr0gramm.com/new/!%20meme'
 
 def getInfoArticle(article):
+
     prefix = "jsid-post-"
     articleId = article.get("id")[len(prefix):]
     image_post = article.find('div', class_="image-post post-view")
@@ -37,16 +33,12 @@ def getInfoArticle(article):
 
     if not(articleId in image_ids) and image_post and image_creation_time:
         image_ids.append(articleId)
-        global counter 
+        global counter # add this line
         counter = counter + 1
+        print(counter)
         #get post, author and creationTime
         image_author = article.find('a', class_="ui-post-creator__author")
         time_text = image_creation_time.text
-
-        #get title
-        a_tag = article.find('a', {'class': 'badge-evt badge-track'})
-        h2_tag = a_tag.find('h2')
-        title = h2_tag.text.strip()
 
         #get tags
         tags_div = article.find('div', class_='ui-post-tags')
@@ -57,6 +49,8 @@ def getInfoArticle(article):
         vote_ul = article.find('ul', class_='btn-vote')
         upvote_span = vote_ul.find('a', class_='up').find('span')
         downvote_span = vote_ul.find('a', class_='down').find('span')
+        print(upvote_span.text)
+        print(articleId)
         try:
             upvote_count = float(upvote_span.text.strip('K')) * 1000 if 'K' in upvote_span.text else float(upvote_span.text)
         except ValueError:
@@ -72,7 +66,6 @@ def getInfoArticle(article):
         src_value = img_element['src']
     
         if image_author and not(image_author.text.strip() in banned_authors) and not(src_value.startswith("https://miscmedia")): 
-            image_titels.append(title)
             image_sources.append(src_value)
             image_authors.append(image_author)
             images_creation.append(time_text)
@@ -81,19 +74,17 @@ def getInfoArticle(article):
             image_tags.append(tags)
 
 def collectArticleIds(driver):
-    SCROLL_PAUSE_TIME = 0.5
+    SCROLL_PAUSE_TIME = 1
     i = 0
-    while (i < 3):
+    while (i < 2):
         i += 1
-        print(i)
+        
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(SCROLL_PAUSE_TIME)
         source = driver.page_source
         soup = BeautifulSoup(source,"html.parser")
-
-        articles = soup.select('article[id^="jsid-post-"]')
-        for article in articles:
-            getInfoArticle(article)
+        
+        
 
 def downloadImages():
     save_dir = r'C:\Users\ASUS\OneDrive\Desktop\articleInfo\9gag_images'
@@ -110,15 +101,13 @@ def downloadImages():
         i += 1
 
 def saveCsv():
-
     #Directory path
     dir_path = r'C:\Users\ASUS\OneDrive\Desktop\articleInfo'
 
     # Create the directory if it doesn't exist
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
-
-
+    
     # create a list of tuples where each tuple represents a row
     rows = zip(image_ids, images_creation, image_sources, image_tags, image_upvotes, image_downvotes)
 
@@ -129,57 +118,57 @@ def saveCsv():
         for row in rows:
             writer.writerow(row)
 
-def getComments():
-    links = []
-    individual_posts = []
-    comments = []
-    for i, id in enumerate(image_ids):
-        url = "https://9gag.com/gag/" + id + "#comment"
-        links.append(url)
-        response = requests.get(url)
-        html_content = response.text
-        individual_posts.append(html_content)
-        soup = BeautifulSoup(html_content, 'html.parser')
-        elements = soup.find_all('div', class_='comment-list-item__text')
-        post_comments = []
-        for element in elements:
-            print(element.text)
-            post_comments.append(element.text)
-        comments.append(post_comments)
-        print(comments)
-        i += 1
-
-
 opts = Options()
 opts.add_argument("user-agent=whatever you want")
 driver = webdriver.Chrome(PATH,chrome_options=opts)
 
 driver.get(url)
 wait = WebDriverWait(driver, 10)
-element = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'post-view')))
+element = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'stream-row')))
 
-collectArticleIds(driver)
-saveCsv()
-downloadImages()
-#getComments()
+SCROLL_PAUSE_TIME = 1
+i = 0
+while (i < 4):
+    i += 1
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(SCROLL_PAUSE_TIME)
+
+source = driver.page_source
+soup = BeautifulSoup(source,"html.parser")
+
+# find the <div> element with ID "stream"
+stream_div = soup.find('div', id='stream')
+
+# find all <div> elements with class "stream-row" that are descendants of `stream_div`
+stream_rows = stream_div.find_all('div', class_='stream-row')
 
 
+# create a new BeautifulSoup object with only the `stream_rows` elements
+new_soup = BeautifulSoup('<html><body></body></html>', 'html.parser')
+body_tag = new_soup.body
+for row in stream_rows:
+    body_tag.append(row)
+    # find all <a> elements with class "silent thumb" that are descendants of `stream_row`
+    silent_thumb_links = row.find_all('a', class_='silent thumb')
 
-def dostuff():
-    articles = soup.select('article[id^="jsid-post-"]')
+    # extract the `id` attribute value of each `a` element and add it to a list
+    ids = []
+    for link in silent_thumb_links:
+        ids.append(link['id'])
 
-    soup = soup.prettify()
+    print(ids)
 
-    with open("image_sources.html", "w", encoding="utf-8") as file:
-        for image_source in image_sources:
-            file.write(image_source)
-            file.write('\n\n')
+# save the new soup as an HTML file
+filename = 'stream_rows.html'
+with open(filename, 'w', encoding='utf-8') as f:
+    f.write(str(new_soup))
 
-    with open("individual_posts.html", "w", encoding="utf-8") as file:
-        for individual_post in individual_posts:
-            file.write(individual_post)
-            file.write('\n\n')
+# Assuming `soup` is the BeautifulSoup object you want to save
+filename = 'pr0gramm.html'
 
-driver.quit()
+# Save the prettified HTML code to a file
+with open(filename, 'w', encoding='utf-8') as f:
+    f.write(str(soup))
+
 
 
