@@ -20,74 +20,10 @@ image_authors = []
 counter = 1
 
 PATH = "C:\Program Files\chromedriver.exe"
-url = 'https://pr0gramm.com/new/!%20meme'
-
-def getInfoArticle(article):
-
-    prefix = "jsid-post-"
-    articleId = article.get("id")[len(prefix):]
-    image_post = article.find('div', class_="image-post post-view")
-    image_creation_time = article.find('span', class_="ui-post-creator__creation")
-
-
-
-    if not(articleId in image_ids) and image_post and image_creation_time:
-        image_ids.append(articleId)
-        global counter # add this line
-        counter = counter + 1
-        print(counter)
-        #get post, author and creationTime
-        image_author = article.find('a', class_="ui-post-creator__author")
-        time_text = image_creation_time.text
-
-        #get tags
-        tags_div = article.find('div', class_='ui-post-tags')
-        tag_elements = tags_div.find_all('a')
-        tags = [tag.text.strip() for tag in tag_elements]
-
-        #get up and downvotes
-        vote_ul = article.find('ul', class_='btn-vote')
-        upvote_span = vote_ul.find('a', class_='up').find('span')
-        downvote_span = vote_ul.find('a', class_='down').find('span')
-        print(upvote_span.text)
-        print(articleId)
-        try:
-            upvote_count = float(upvote_span.text.strip('K')) * 1000 if 'K' in upvote_span.text else float(upvote_span.text)
-        except ValueError:
-            upvote_count = 0
-
-        try:
-            downvote_count = float(downvote_span.text.strip('K')) * 1000 if 'K' in downvote_span.text else float(downvote_span.text)
-        except ValueError:
-            downvote_count = 0
-
-        #get image source       
-        img_element = image_post.find('img')
-        src_value = img_element['src']
-    
-        if image_author and not(image_author.text.strip() in banned_authors) and not(src_value.startswith("https://miscmedia")): 
-            image_sources.append(src_value)
-            image_authors.append(image_author)
-            images_creation.append(time_text)
-            image_upvotes.append(upvote_count)
-            image_downvotes.append(downvote_count)
-            image_tags.append(tags)
-
-def collectArticleIds(driver):
-    SCROLL_PAUSE_TIME = 1
-    i = 0
-    while (i < 2):
-        i += 1
-        
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(SCROLL_PAUSE_TIME)
-        source = driver.page_source
-        soup = BeautifulSoup(source,"html.parser")
-        
-        
+url = 'https://pr0gramm.com/new/!%20meme' 
 
 def downloadImages():
-    save_dir = r'C:\Users\ASUS\OneDrive\Desktop\articleInfo\9gag_images'
+    save_dir = r'C:\Users\ASUS\OneDrive\Desktop\articleInfo\pr0gramm_images'
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -100,23 +36,98 @@ def downloadImages():
             f.write(response.content)
         i += 1
 
-def saveCsv():
-    #Directory path
-    dir_path = r'C:\Users\ASUS\OneDrive\Desktop\articleInfo'
+def scroll(driver):
+    SCROLL_PAUSE_TIME = 0.1
+    i = 0
+    while (i < 2):
+        i += 1
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(SCROLL_PAUSE_TIME)
 
-    # Create the directory if it doesn't exist
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+    source = driver.page_source
+    soup = BeautifulSoup(source,"html.parser")
+    return soup
+
+def getRows(soup):
+    # find the <div> element with ID "stream"
+    stream_div = soup.find('div', id='stream')
+
+    # find all <div> elements with class "stream-row" that are descendants of `stream_div`
+    stream_rows = stream_div.find_all('div', class_='stream-row')
+
+    # create a new BeautifulSoup object with only the `stream_rows` elements
+    new_soup = BeautifulSoup('<html><body></body></html>', 'html.parser')
+    body_tag = new_soup.body
+    ids = []
+    for row in stream_rows:
+        body_tag.append(row)
+        # find all <a> elements with class "silent thumb" that are descendants of `stream_row`
+        silent_thumb_links = row.find_all('a', class_='silent thumb')
+
+        # extract the `id` attribute value of each `a` element and add it to a list
+        
+        for link in silent_thumb_links:
+            id = link['id']
+            id_number = id.replace("item-", "")
+            ids.append(id_number)
+    return ids, new_soup
+
+def element_has_class(driver, locator, class_name):
+    element = driver.find_element(*locator)
+    if class_name in element.get_attribute("class"):
+        return element
+    else:
+        return False
+
+def waitForElements(driver):
+    # wait up to 10 seconds time in item-details
+    wait = WebDriverWait(driver, 10)
+    item_details_locator = (By.CLASS_NAME, 'item-details')
+    item_details_element = wait.until(EC.visibility_of_element_located(item_details_locator))
+    time_locator = (By.CLASS_NAME, 'time')
+    time_element = wait.until(lambda driver: element_has_class(driver, (By.XPATH, './/a[@class="time"]'), 'time'))
+
+    # Wait up to 10 seconds for tag-link
+    wait = WebDriverWait(driver, 10)
+    tag_link = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'tag-link')))
+
+    # Wait up to 10 seconds for score
+    wait = WebDriverWait(driver, 10)
+    score_span = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'score')))
+
+def getMetaData(dynamicContentSoup):
+
+    #metadaten list
+    memes_date = []
+    memes_author = []
+    memes_upvotes = []
+    memes_downvotes = []
+
+    # Get tags
+    memes_tags = dynamicContentSoup.find_all('a', {'class': 'tag-link'})
+    for tag_link in memes_tags:
+        print(tag_link.string)
+
+    # Get time
+    item_details = dynamicContentSoup.find(class_='item-details')
+    time_element = item_details.find('a', class_='time')
+
+    # Get author
+    author = dynamicContentSoup.find('a', class_='user')
+
+
+    # Get upvotes and downvotes
+    score_span = soup.find('span', class_='score')
+    print(score_span)
+    score_contents = score_span.contents[0]
+    upvote_string, downvote_string = score_contents.split(', ')
+    upvote = int(''.join(filter(str.isdigit, upvote_string)))
+    downvote = int(''.join(filter(str.isdigit, downvote_string)))
+
+    print(upvote)
+    print(downvote)
     
-    # create a list of tuples where each tuple represents a row
-    rows = zip(image_ids, images_creation, image_sources, image_tags, image_upvotes, image_downvotes)
-
-    # write the rows to a CSV file
-    with open("C:/Users/ASUS/OneDrive/Desktop/articleInfo/image_data.csv", "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["image_id", "image_creation", "image_source", "image_tags", "image_upvotes", "image_downvotes"])
-        for row in rows:
-            writer.writerow(row)
+    return memes_tags, time_element
 
 opts = Options()
 opts.add_argument("user-agent=whatever you want")
@@ -126,49 +137,42 @@ driver.get(url)
 wait = WebDriverWait(driver, 10)
 element = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'stream-row')))
 
-SCROLL_PAUSE_TIME = 1
-i = 0
-while (i < 4):
-    i += 1
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(SCROLL_PAUSE_TIME)
+soup = scroll(driver)
 
-source = driver.page_source
-soup = BeautifulSoup(source,"html.parser")
-
-# find the <div> element with ID "stream"
-stream_div = soup.find('div', id='stream')
-
-# find all <div> elements with class "stream-row" that are descendants of `stream_div`
-stream_rows = stream_div.find_all('div', class_='stream-row')
+ids, new_soup = getRows(soup)
 
 
-# create a new BeautifulSoup object with only the `stream_rows` elements
-new_soup = BeautifulSoup('<html><body></body></html>', 'html.parser')
-body_tag = new_soup.body
-for row in stream_rows:
-    body_tag.append(row)
-    # find all <a> elements with class "silent thumb" that are descendants of `stream_row`
-    silent_thumb_links = row.find_all('a', class_='silent thumb')
 
-    # extract the `id` attribute value of each `a` element and add it to a list
-    ids = []
-    for link in silent_thumb_links:
-        ids.append(link['id'])
+# Set the URL of the website you want to retrieve
+url = 'https://pr0gramm.com/new/5630296'
 
-    print(ids)
+driver.get(url)
+
+waitForElements(driver)
+# Get the HTML source code of the webpage
+dynamicContent = driver.page_source
+dynamicContentSoup = BeautifulSoup(dynamicContent,"html.parser")
+
+getMetaData(dynamicContentSoup)
+
+# Close the web driver
+driver.close()
+
+
+
+
+
+# Write the HTML content to a file with the desired name
+filename = 'dynamicPr0grammSite.html'
+with open(filename, 'w', encoding='utf-8') as f:
+    f.write(dynamicContentSoup.prettify())
 
 # save the new soup as an HTML file
 filename = 'stream_rows.html'
 with open(filename, 'w', encoding='utf-8') as f:
     f.write(str(new_soup))
 
-# Assuming `soup` is the BeautifulSoup object you want to save
-filename = 'pr0gramm.html'
 
-# Save the prettified HTML code to a file
-with open(filename, 'w', encoding='utf-8') as f:
-    f.write(str(soup))
 
 
 
