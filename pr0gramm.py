@@ -95,6 +95,11 @@ def waitForElements(driver):
     wait = WebDriverWait(driver, 10)
     score_span = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'score')))
 
+    # Wait up to 10 seconds for the element to be present
+    wait = WebDriverWait(driver, 10)
+    locator = (By.CLASS_NAME, 'item-image-actual')
+    element = wait.until(EC.presence_of_element_located(locator))
+
 def getMetaData(dynamicContentSoup):
 
     #metadaten list
@@ -102,32 +107,38 @@ def getMetaData(dynamicContentSoup):
     memes_author = []
     memes_upvotes = []
     memes_downvotes = []
+    memes_source = []
+
+    # Get source
+    img_element = dynamicContentSoup.find('img', {'class': 'item-image-actual'})
+    img_src = img_element.get('src')
 
     # Get tags
     memes_tags = dynamicContentSoup.find_all('a', {'class': 'tag-link'})
-    for tag_link in memes_tags:
-        print(tag_link.string)
 
     # Get time
     item_details = dynamicContentSoup.find(class_='item-details')
     time_element = item_details.find('a', class_='time')
+    meme_date = time_element.get('title')
 
     # Get author
     author = dynamicContentSoup.find('a', class_='user')
 
-
     # Get upvotes and downvotes
-    score_span = soup.find('span', class_='score')
-    print(score_span)
-    score_contents = score_span.contents[0]
+    item_vote_div = dynamicContentSoup.find('div', class_='item-vote')
+    score_span = item_vote_div.find('span', class_='score')
+    score_contents = score_span.get('title')
     upvote_string, downvote_string = score_contents.split(', ')
     upvote = int(''.join(filter(str.isdigit, upvote_string)))
     downvote = int(''.join(filter(str.isdigit, downvote_string)))
 
+    print(img_src)
+    print(memes_tags)
+    print(time_element)
     print(upvote)
     print(downvote)
     
-    return memes_tags, time_element
+    return img_src, memes_tags, time_element, upvote, downvote
 
 opts = Options()
 opts.add_argument("user-agent=whatever you want")
