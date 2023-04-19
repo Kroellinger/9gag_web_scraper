@@ -44,9 +44,12 @@ def get_html_from_links(driver):
     with open('C:\\Users\\ASUS\\OneDrive\\Desktop\\articleInfo\\urls_pr0gramm.csv', 'r') as f:
         reader = csv.reader(f)
         links = [row[0] for row in reader]
-
+    
+    j = 0
     # Process links in batches of 1000
-    for i in range(0, len(links), 1000):
+    #51865
+    #58910 + 5872
+    for i in range(64782, len(links), 1000):
         batch = links[i:i+1000]
 
         # Create an empty list to store the HTML code blocks for this batch
@@ -54,8 +57,11 @@ def get_html_from_links(driver):
 
         # Iterate through the links in this batch and retrieve the HTML from each link
         for link in batch:
+            j += 1
+            print(j)
+            print(link)
             driver.get(link)
-            waitForElements(driver)
+            #waitForElements(driver)
             html = driver.page_source
             html_blocks.append(html)
 

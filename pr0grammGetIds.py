@@ -20,16 +20,31 @@ image_authors = []
 counter = 1
 
 PATH = "C:\Program Files\chromedriver.exe"
-url = 'https://pr0gramm.com/new/!%20meme' 
+url = 'https://pr0gramm.com/new/!%20meme'
+
+import time
 
 def scroll(driver):
-
-    SCROLL_PAUSE_TIME = 3
+    SCROLL_PAUSE_TIME = 0.5
+    TIMEOUT = 10  # Maximum time to wait for dynamic content to load
+    last_html = driver.page_source
     i = 0
-    while (i < 1):
+    while True:
         i += 1
+        print(i)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(SCROLL_PAUSE_TIME)
+        if i % 50 == 0:  # Check HTML length every 50 iterations
+            new_html = driver.page_source
+            if new_html == last_html:
+                time.sleep(TIMEOUT)  # Wait for dynamic content to load
+                new_html = driver.page_source
+                if new_html == last_html:
+                    break  # Stop scrolling if HTML content remains the same after waiting
+            last_html = new_html
+        else:
+            last_html = driver.page_source
+
 
     source = driver.page_source
     soup = BeautifulSoup(source,"html.parser")
@@ -90,7 +105,6 @@ soup = scroll(driver)
 ids, new_soup = getRows(soup)
 
 url_list = [f'https://pr0gramm.com/new/{id}' for id in ids]
-
+print(len(url_list))
 save_ids_to_csv(ids)
-
 save_urls_to_csv(url_list)
