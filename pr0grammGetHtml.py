@@ -1,3 +1,4 @@
+import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import csv
@@ -49,7 +50,7 @@ def get_html_from_links(driver):
     # Process links in batches of 1000
     #51865
     #58910 + 5872
-    for i in range(64782, len(links), 1000):
+    for i in range(80900, len(links), 1000):
         batch = links[i:i+1000]
 
         # Create an empty list to store the HTML code blocks for this batch
@@ -62,19 +63,23 @@ def get_html_from_links(driver):
             print(link)
             driver.get(link)
             #waitForElements(driver)
+            time.sleep(0.5)
             html = driver.page_source
             html_blocks.append(html)
 
         # Create or open the JSON file for writing
-        with open('C:\\Users\\ASUS\\OneDrive\\Desktop\\articleInfo\\pr0grammJson.json', 'a+') as f:
+        with open('C:\\Users\\ASUS\\OneDrive\\Desktop\\articleInfo\\pr0grammJson2.json', 'a+') as f:
             # Load any existing JSON data from the file
             try:
                 data = json.load(f)
             except json.JSONDecodeError:
                 data = []
 
-            # Append the new HTML blocks to the existing data
-            data += html_blocks
+            # Convert each HTML block to a JSON-encoded string and append to the existing data
+            for block in html_blocks:
+                json_block = json.dumps(block)
+                data.append(json_block)
+
 
             # Write the data back to the file
             f.seek(0)

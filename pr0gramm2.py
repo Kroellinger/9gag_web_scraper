@@ -45,9 +45,33 @@ def getMetaData(soup):
 
     return img_src, author, meme_tags, meme_date, meme_upvote, meme_downvote
 
-# Load the HTML blocks from the JSON file
-with open('C:\\Users\\ASUS\\OneDrive\\Desktop\\articleInfo\\pr0grammJson.json', 'r') as f:
-    data = json.load(f)
+import json
+
+# Open the JSON file
+with open('C:\\Users\\ASUS\\OneDrive\\Desktop\\articleInfo\\pr0grammJson2.json', 'r') as f:
+    # Attempt to load the JSON data
+    try:
+        data = json.load(f)
+    # If there's a problem with the JSON data, skip over the problematic data
+    except json.decoder.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        # Move the file pointer back to the beginning of the file
+        f.seek(0)
+        # Initialize an empty list to store the valid JSON objects
+        valid_data = []
+        # Iterate through the file line by line
+        for line in f:
+            # Attempt to load each line as a JSON object
+            try:
+                obj = json.loads(line)
+                valid_data.append(obj)
+            # If there's a problem with a line, skip over it and continue processing
+            except json.decoder.JSONDecodeError as e:
+                print(f"Error decoding JSON line: {e}")
+        # Set the data variable to the list of valid JSON objects
+        data = valid_data
+    
+
 
 # Data Lists
 memes_source = []
@@ -59,7 +83,9 @@ memes_downvotes = []
 
 # Process each HTML block
 for html in data:
-    soup = BeautifulSoup(html, 'html.parser')
+    block = json.loads(html)
+
+    soup = BeautifulSoup(block, 'html.parser')
     img_element = soup.find('img', {'class': 'item-image-actual'})
 
     if img_element:
