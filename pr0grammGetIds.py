@@ -9,6 +9,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+ids_output_csv = 'path'
+urls_output_csv = 'path'
 
 image_ids = []
 images_creation = []
@@ -17,12 +19,9 @@ image_tags = []
 image_upvotes = []
 image_downvotes = []
 image_authors = []
-counter = 1
 
 PATH = "C:\Program Files\chromedriver.exe"
 url = 'https://pr0gramm.com/new/!%20meme'
-
-import time
 
 def scroll(driver):
     SCROLL_PAUSE_TIME = 0.5
@@ -76,7 +75,7 @@ def getRows(soup):
 
 def save_ids_to_csv(ids):
     # Open the CSV file for writing
-    with open('C:\\Users\\ASUS\\OneDrive\\Desktop\\articleInfo\\id_pr0gramm.csv', 'w', newline='') as f:
+    with open(ids_output_csv, 'w', newline='') as f:
         # Create a CSV writer object
         writer = csv.writer(f)
         
@@ -85,7 +84,7 @@ def save_ids_to_csv(ids):
 
 def save_urls_to_csv(url_list):
     # Open the CSV file for writing
-    with open('C:\\Users\\ASUS\\OneDrive\\Desktop\\articleInfo\\urls_pr0gramm.csv', 'w', newline='') as f:
+    with open(urls_output_csv, 'w', newline='') as f:
         # Create a CSV writer object
         writer = csv.writer(f)
         
@@ -105,6 +104,5 @@ soup = scroll(driver)
 ids, new_soup = getRows(soup)
 
 url_list = [f'https://pr0gramm.com/new/{id}' for id in ids]
-print(len(url_list))
 save_ids_to_csv(ids)
 save_urls_to_csv(url_list)
